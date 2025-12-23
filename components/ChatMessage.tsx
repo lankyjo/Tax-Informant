@@ -6,29 +6,33 @@ interface ChatMessageProps {
   message: Message;
   sources?: GroundingSource[];
   isLatest?: boolean;
+  onTypingUpdate?: () => void;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, sources, isLatest }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, sources, isLatest, onTypingUpdate }) => {
   const isUser = message.role === 'user';
   const [displayedText, setDisplayedText] = useState(isUser || !isLatest ? message.text : "");
   
   useEffect(() => {
     if (!isUser && isLatest && displayedText.length < message.text.length) {
       const timeout = setTimeout(() => {
-        setDisplayedText(message.text.slice(0, displayedText.length + 2));
-      }, 15);
+        setDisplayedText(message.text.slice(0, displayedText.length + 3));
+        if (onTypingUpdate) onTypingUpdate();
+      }, 10);
       return () => clearTimeout(timeout);
     }
-  }, [message.text, displayedText, isUser, isLatest]);
+  }, [message.text, displayedText, isUser, isLatest, onTypingUpdate]);
 
   const formatText = (text: string) => {
+    // Clean up any remaining formatting artifacts
     // Regex to find **bold** text and render it as <strong>
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-black text-emerald-600 dark:text-emerald-400">{part.slice(2, -2)}</strong>;
+        return <strong key={i} className="font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{part.slice(2, -2)}</strong>;
       }
-      return part;
+      // Remove any single asterisks that might slip through
+      return part.replace(/\*/g, '');
     });
   };
 

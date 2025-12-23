@@ -6,7 +6,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import Sidebar from './components/Sidebar';
 import { Message, GroundingSource } from './types';
 import { getGeminiResponse } from './services/geminiService';
-import { IconClose } from './components/Icons';
+import { IconClose, IconChevronRight, IconArrowDown } from './components/Icons';
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -15,14 +15,34 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Auto scroll effect on message change or loading
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  // Handle showing scroll button
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 300);
+    }
+  };
 
   useEffect(() => {
     if (isDarkMode) {
@@ -74,13 +94,30 @@ const App: React.FC = () => {
 
   const closeChat = () => {
     setIsChatOpen(false);
+    setMessages([]);
+    setSourcesMap({});
   };
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-500">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
       
       <div className="flex-1 flex flex-col min-w-0 relative">
+        {isSidebarCollapsed && (
+          <button 
+            onClick={() => setIsSidebarCollapsed(false)}
+            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-xl shadow-lg hover:bg-emerald-50 dark:hover:bg-emerald-950 transition-all text-emerald-600"
+            title="Expand Sidebar"
+          >
+            <IconChevronRight />
+          </button>
+        )}
+
         <Navbar 
           isDarkMode={isDarkMode} 
           toggleDarkMode={() => setIsDarkMode(!isDarkMode)} 
@@ -114,7 +151,8 @@ const App: React.FC = () => {
 
               <div 
                 ref={scrollRef}
-                className="flex-1 overflow-y-auto px-4 md:px-12 py-10 scroll-smooth"
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto px-4 md:px-12 py-10 scroll-smooth relative"
               >
                 <div className="max-w-4xl mx-auto space-y-4">
                   {messages.map((m, idx) => (
@@ -123,6 +161,7 @@ const App: React.FC = () => {
                       message={m} 
                       sources={sourcesMap[m.timestamp]} 
                       isLatest={idx === messages.length - 1}
+                      onTypingUpdate={scrollToBottom}
                     />
                   ))}
                   
@@ -139,6 +178,17 @@ const App: React.FC = () => {
                     </div>
                   )}
                 </div>
+                
+                {/* Scroll to Bottom Button */}
+                {showScrollButton && (
+                  <button 
+                    onClick={scrollToBottom}
+                    className="fixed bottom-32 md:bottom-40 right-8 md:right-16 bg-emerald-600 text-white p-3 rounded-full shadow-2xl hover:scale-110 active:scale-90 transition-all z-50 animate-bounce"
+                  >
+                    <IconArrowDown />
+                  </button>
+                )}
+                
                 <div className="h-44"></div>
               </div>
             </div>

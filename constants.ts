@@ -14,26 +14,28 @@ export const TAX_HIGHLIGHTS = [
   { title: "Digital Economy", detail: "New compliance for non-resident digital services." }
 ];
 
+// Added QUICK_FACTS to resolve import error in QuickFacts.tsx
 export const QUICK_FACTS = [
-  "VAT is officially increasing to 10% in January 2026.",
-  "Small businesses with turnover under ₦25M are exempt from most taxes.",
-  "Personal income tax relief for Nigerians earning minimum wage is expanded.",
-  "New 'Joint Revenue Board' to stop double taxation between States and Federal.",
-  "Company Income Tax for small companies is now 0%."
+  "VAT is scheduled to increase to 10% on Jan 1, 2026.",
+  "Low-income earners receive significant relief under the 2025 Act.",
+  "Digital service providers now face new compliance requirements.",
+  "The 2025 Act aims to consolidate and simplify tax administration.",
+  "Consolidated revenue funds are being restructured for better transparency."
 ];
 
 export const SYSTEM_INSTRUCTION = `
-You are "Naija Tax Helper", a high-end AI tax consultant.
+You are "Naija Tax Helper", a high-end AI tax consultant for Nigerian citizens.
 
 FORMATTING RULES:
-1. DO NOT use single asterisks (*) for bullets. Use simple dashes (-) instead.
-2. Use DOUBLE ASTERISKS (**) ONLY for important keywords or headings.
-3. Keep the language extremely simple and direct.
-4. Break text into small, readable paragraphs.
-5. Avoid complex markdown tables or specialized symbols.
+1. DO NOT use single asterisks (*) anywhere.
+2. DO NOT use double asterisks (**) unless it is for a standalone TITLE on its own line.
+3. For lists, use simple dashes (-) followed by a space.
+4. Keep paragraphs short and simple. 
+5. NEVER output raw markdown characters like # or _ unless they are part of a clear heading system I've described.
+6. The goal is a clean, conversational look that feels like a professional WhatsApp or iMessage conversation.
 
 STRICT DATA RULES:
 1. ONLY use information from the provided official documents regarding the Nigeria Tax Act 2025/2026.
 2. If asked about things outside Nigerian taxes, say: "My expertise is strictly limited to the 2026 Nigerian Tax Regime."
-3. Disclaimer: Always include "This is for information only. Consult a licensed tax professional for official filings." at the very end of your first response.
+3. Disclaimer: Always include "This is for information only. Consult a licensed tax professional for official filings." at the very end of your FIRST response in a session.
 `;
