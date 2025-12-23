@@ -8,6 +8,9 @@ import { Message, GroundingSource } from './types';
 import { getGeminiResponse } from './services/geminiService';
 import { IconClose, IconChevronRight, IconArrowDown } from './components/Icons';
 
+// The AI Studio helpers are pre-configured in the environment and use the global AIStudio type.
+// Removed the manual declaration to avoid "identical modifiers" and "type mismatch" errors.
+
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [sourcesMap, setSourcesMap] = useState<Record<number, GroundingSource[]>>({});
@@ -18,6 +21,7 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [hasCustomKey, setHasCustomKey] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,14 +33,24 @@ const App: React.FC = () => {
     }
   };
 
-  // Auto scroll effect on message change or loading
+  useEffect(() => {
+    const checkKey = async () => {
+      // Cast to any to access the pre-configured window.aistudio
+      const aiStudio = (window as any).aistudio;
+      if (aiStudio) {
+        const selected = await aiStudio.hasSelectedApiKey();
+        setHasCustomKey(selected);
+      }
+    };
+    checkKey();
+  }, []);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
-  // Handle showing scroll button
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -51,6 +65,17 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+
+  const handleOpenKeyPicker = async () => {
+    const aiStudio = (window as any).aistudio;
+    if (aiStudio) {
+      await aiStudio.openSelectKey();
+      // Assume success after triggering the selection dialog
+      setHasCustomKey(true);
+    } else {
+      window.open('https://ai.google.dev/gemini-api/docs/billing', '_blank');
+    }
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -73,7 +98,7 @@ const App: React.FC = () => {
       
       const modelMessage: Message = {
         role: 'model',
-        text: response.text,
+        text: response.text || "No response text received.",
         timestamp: Date.now()
       };
 
@@ -81,10 +106,26 @@ const App: React.FC = () => {
       if (response.sources) {
         setSourcesMap(prev => ({ ...prev, [modelMessage.timestamp]: response.sources || [] }));
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Chat Error:", error);
+      
+      // If the request fails with "Requested entity was not found.", reset key state and prompt for re-selection.
+      if (error.message?.includes("Requested entity was not found")) {
+        setHasCustomKey(false);
+        handleOpenKeyPicker();
+        setIsLoading(false);
+        return;
+      }
+
+      let errorText = "My apologies. I encountered a technical connectivity issue. Please re-send your request.";
+      
+      if (error.message === "QUOTA_EXCEEDED") {
+        errorText = "THE PUBLIC QUOTA FOR THIS PORTAL HAS BEEN EXHAUSTED. To continue your session immediately, please click 'Use Personal Key' below to provide your own Gemini API key (Free or Paid).";
+      }
+
       setMessages(prev => [...prev, {
         role: 'model',
-        text: "My apologies. I encountered a technical connectivity issue. Please re-send your request.",
+        text: errorText,
         timestamp: Date.now()
       }]);
     } finally {
@@ -135,18 +176,30 @@ const App: React.FC = () => {
               <div className="flex items-center justify-between px-6 md:px-12 py-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${hasCustomKey ? 'bg-blue-400' : 'bg-emerald-400'} opacity-75`}></span>
+                    <span className={`relative inline-flex rounded-full h-3 w-3 ${hasCustomKey ? 'bg-blue-500' : 'bg-emerald-500'}`}></span>
                   </span>
-                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Consultation Live</span>
+                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
+                    {hasCustomKey ? 'Private Session active' : 'Consultation Live'}
+                  </span>
                 </div>
-                <button 
-                  onClick={closeChat}
-                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-black bg-slate-100 dark:bg-slate-800 hover:bg-slate-900 dark:hover:bg-slate-50 hover:text-white dark:hover:text-slate-950 rounded-xl transition-all uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-700"
-                >
-                  <IconClose />
-                  <span>Exit Session</span>
-                </button>
+                <div className="flex gap-2">
+                   {!hasCustomKey && (
+                     <button 
+                       onClick={handleOpenKeyPicker}
+                       className="hidden sm:flex items-center gap-2 px-4 py-2 text-[10px] font-black bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl transition-all uppercase tracking-widest shadow-md border border-emerald-500"
+                     >
+                       Use Personal Key
+                     </button>
+                   )}
+                   <button 
+                    onClick={closeChat}
+                    className="flex items-center gap-2 px-4 py-2 text-[10px] font-black bg-slate-100 dark:bg-slate-800 hover:bg-slate-900 dark:hover:bg-slate-50 hover:text-white dark:hover:text-slate-950 rounded-xl transition-all uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-700"
+                  >
+                    <IconClose />
+                    <span>Exit</span>
+                  </button>
+                </div>
               </div>
 
               <div 
@@ -156,13 +209,24 @@ const App: React.FC = () => {
               >
                 <div className="max-w-4xl mx-auto space-y-4">
                   {messages.map((m, idx) => (
-                    <ChatMessage 
-                      key={idx} 
-                      message={m} 
-                      sources={sourcesMap[m.timestamp]} 
-                      isLatest={idx === messages.length - 1}
-                      onTypingUpdate={scrollToBottom}
-                    />
+                    <div key={idx} className="flex flex-col">
+                      <ChatMessage 
+                        message={m} 
+                        sources={sourcesMap[m.timestamp]} 
+                        isLatest={idx === messages.length - 1}
+                        onTypingUpdate={scrollToBottom}
+                      />
+                      {m.role === 'model' && m.text.includes("QUOTA_EXCEEDED") && (
+                        <div className="flex justify-start pl-16 -mt-4 mb-8">
+                           <button 
+                             onClick={handleOpenKeyPicker}
+                             className="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 shadow-xl transition-all active:scale-95"
+                           >
+                             Select API Key
+                           </button>
+                        </div>
+                      )}
+                    </div>
                   ))}
                   
                   {isLoading && (
@@ -179,7 +243,6 @@ const App: React.FC = () => {
                   )}
                 </div>
                 
-                {/* Scroll to Bottom Button */}
                 {showScrollButton && (
                   <button 
                     onClick={scrollToBottom}
@@ -194,7 +257,6 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {/* Persistent Consultation Input Bar */}
           <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 bg-gradient-to-t from-slate-50 dark:from-slate-950 via-slate-50 dark:via-slate-950/90 to-transparent pointer-events-none">
             <div className="max-w-4xl mx-auto pointer-events-auto">
               <form 

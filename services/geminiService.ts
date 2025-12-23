@@ -7,11 +7,12 @@ export const getGeminiResponse = async (
   history: { role: Role; text: string }[],
   userInput: string
 ): Promise<TaxResponse> => {
+  // Always create a new instance to ensure we use the most up-to-date API key
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: [
         ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'model' as any, parts: [{ text: h.text }] })),
         { role: 'user', parts: [{ text: userInput }] }
@@ -33,8 +34,14 @@ export const getGeminiResponse = async (
     })).filter((s: any) => s.uri !== "") || [];
 
     return { text, sources };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    
+    // Check for quota exceeded specifically
+    if (error?.message?.includes("429") || error?.message?.toLowerCase().includes("quota")) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
+    
     throw new Error("Failed to connect to the Naija Tax Helper service.");
   }
 };
