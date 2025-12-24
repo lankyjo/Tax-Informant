@@ -1,24 +1,26 @@
 
 import React from 'react';
 import { TAX_SOURCES, TAX_HIGHLIGHTS } from '../constants';
-import { IconBook, IconClose, IconChevronLeft } from './Icons';
+import { IconBook, IconClose, IconChevronLeft, IconCalculator, IconScale } from './Icons';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  currentView: 'chat' | 'calculator';
+  onNavigate: (view: 'chat' | 'calculator') => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse, currentView, onNavigate }) => {
   return (
     <>
       {/* Mobile Overlay */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
-      
+
       <aside className={`
         fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out border-r
         bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 flex flex-col
@@ -40,6 +42,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
           </div>
 
           <div className="mb-10">
+            <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6">Tax Tools</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => { onNavigate('chat'); onClose(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === 'chat' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <IconScale />
+                <span className="text-sm font-bold">Consultation</span>
+              </button>
+              <button
+                onClick={() => { onNavigate('calculator'); onClose(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === 'calculator' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <IconCalculator />
+                <span className="text-sm font-bold">Tax Estimator</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-10">
             <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
               <IconBook />
               Legal Library
@@ -47,9 +69,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggl
             <ul className="space-y-4">
               {TAX_SOURCES.map((src, i) => (
                 <li key={i}>
-                  <a 
-                    href={src.url} 
-                    target="_blank" 
+                  <a
+                    href={src.url}
+                    target="_blank"
                     rel="noreferrer"
                     className="group block text-sm hover:text-emerald-600 transition-colors"
                   >
