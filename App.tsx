@@ -18,7 +18,16 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [currentView, setCurrentView] = useState<'chat' | 'calculator'>('chat');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      if (saved) {
+        return saved === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -45,10 +54,13 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
@@ -139,7 +151,7 @@ const App: React.FC = () => {
           {currentView === 'calculator' ? (
             <TaxCalculator onBack={() => setCurrentView('chat')} />
           ) : (
-            <>
+            <div className="flex-1 flex flex-col relative min-h-0">
               {!isChatOpen ? (
                 <div className="flex-1 overflow-y-auto pb-40">
                   <WelcomeScreen onSelectPrompt={(t) => handleSend(t)} />
@@ -250,7 +262,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </main>
       </div>
