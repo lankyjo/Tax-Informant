@@ -1,6 +1,6 @@
 # Tax Informant 🇳🇬
 
-**Tax Informant** is an intelligent, AI-powered chat assistant designed to demystify the 2026 Nigerian Tax Reform laws. It provides instant, plain-language answers to complex tax questions, helping everyday citizens and small business owners understand how the new regulations affect them.
+**Tax Informant** is an intelligent, AI-powered chat assistant designed to demystify the 2026 Nigerian Tax Reform laws. It provides instant, plain-language answers to complex tax questions, helping everyday citizens and small business owners understand how the new regulations affect them and their business at large.
 
 ## 🚀 Features
 
